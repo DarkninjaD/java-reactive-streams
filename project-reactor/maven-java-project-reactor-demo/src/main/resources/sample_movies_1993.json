@@ -1,0 +1,53 @@
+[
+  {
+    "originalTitle": "Tötet nicht mehr",
+    "runtimeMinutes": 0,
+    "startYear": 2019,
+    "genres": [
+      "Action",
+      "Crime"
+    ]
+  },
+  {
+    "originalTitle": "Kate & Leopold",
+    "runtimeMinutes": 118,
+    "startYear": 2001,
+    "genres": [
+      "Comedy",
+      "Fantasy",
+      "Romance"
+    ]
+  },
+  {
+    "originalTitle": "Shiva und die Galgenblume",
+    "runtimeMinutes": 0,
+    "startYear": 1993,
+    "genres": [
+      "Thriller"
+    ]
+  },
+  {
+    "originalTitle": "Il figlio dell'uomo",
+    "runtimeMinutes": 0,
+    "startYear": 2000,
+    "genres": []
+  },
+  {
+    "originalTitle": "El tango del viudo y su espejo deformante",
+    "runtimeMinutes": 70,
+    "startYear": 2020,
+    "genres": [
+      "Drama",
+      "Mystery"
+    ]
+  },
+  {
+    "originalTitle": "Gauri",
+    "runtimeMinutes": 152,
+    "startYear": 2025,
+    "genres": [
+      "Drama",
+      "Family"
+    ]
+  }
+]

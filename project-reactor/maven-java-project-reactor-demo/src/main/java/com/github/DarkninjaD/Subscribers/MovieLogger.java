@@ -1,17 +1,20 @@
 package com.github.DarkninjaD.Subscribers;
 
-import com.github.DarkninjaD.Handlers.DataHandler;
+import com.github.DarkninjaD.Handlers.MovieHandler;
 
 /**
  * DataLogger
  */
-public class DataLogger {
+public class MovieLogger {
 
-  public DataLogger(DataHandler handler) {
-    handler.getProcessedFlow().subscribe(
+  public MovieLogger(MovieHandler handler) {
+    handler
+      .getProcessedFlow()
+      .subscribe(
         item -> logData(item),
         error -> logError(error),
-        () -> logCompletion());
+        () -> logCompletion()
+      );
   }
 
   private void logData(String item) {

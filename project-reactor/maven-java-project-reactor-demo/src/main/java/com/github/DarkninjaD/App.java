@@ -1,24 +1,29 @@
 package com.github.DarkninjaD;
 
+import com.github.DarkninjaD.Adapters.CsvToMovieAdapter;
+import com.github.DarkninjaD.Adapters.JsonToMovieAdapter;
+import com.github.DarkninjaD.Handlers.MovieHandler;
+import com.github.DarkninjaD.Subscribers.MovieLogger;
+import java.net.URI;
 import java.util.List;
-
-import com.github.DarkninjaD.Adapters.CsvDataAdapter;
-import com.github.DarkninjaD.Adapters.JsonDataAdapter;
-import com.github.DarkninjaD.Handlers.DataHandler;
-import com.github.DarkninjaD.Subscribers.DataLogger;
 
 /**
  * Hello world!
  */
 public class App {
-    public static void main(String[] args) throws InterruptedException {
-        CsvDataAdapter csvAdapter = new CsvDataAdapter();
-        JsonDataAdapter jsonAdapter = new JsonDataAdapter();
 
-        DataHandler handler = new DataHandler(List.of(csvAdapter, jsonAdapter));
+  public static void main(String[] args) throws InterruptedException {
+    CsvToMovieAdapter csvAdapter = new CsvToMovieAdapter(
+      "/sample_movies_1993.csv"
+    );
+    JsonToMovieAdapter jsonAdapter = new JsonToMovieAdapter(
+      "/sample_movies_1993.json"
+    );
 
-        DataLogger log = new DataLogger(handler);
+    MovieHandler handler = new MovieHandler(List.of(csvAdapter, jsonAdapter));
 
-        Thread.sleep(1000);
-    }
+    MovieLogger log = new MovieLogger(handler);
+
+    Thread.sleep(1000);
+  }
 }

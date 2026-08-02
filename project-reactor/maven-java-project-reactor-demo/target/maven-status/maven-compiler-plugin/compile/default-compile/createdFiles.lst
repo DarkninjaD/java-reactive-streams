@@ -1,7 +1,0 @@
-com/github/DarkninjaD/Handlers/DataHandler.class
-com/github/DarkninjaD/Interfaces/IDataProvider.class
-com/github/DarkninjaD/Subscribers/DataLogger.class
-com/github/DarkninjaD/App.class
-com/github/DarkninjaD/Adapters/JsonDataAdapter.class
-com/github/DarkninjaD/Models/DataDTO.class
-com/github/DarkninjaD/Adapters/CsvDataAdapter.class

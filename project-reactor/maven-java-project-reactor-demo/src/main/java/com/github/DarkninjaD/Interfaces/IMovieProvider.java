@@ -1,7 +1,6 @@
 package com.github.DarkninjaD.Interfaces;
 
-import com.github.DarkninjaD.Models.DataDTO;
-
+import com.github.DarkninjaD.Models.MovieDTO;
 import reactor.core.publisher.Flux;
 
 /**
@@ -10,10 +9,10 @@ import reactor.core.publisher.Flux;
  * The method signature and the given return type.
  *
  * @methods getFlow()
- * @return a {@link Flux flow} of our {@link DataDTO}
+ * @return a {@link Flux flow} of our {@link MovieDTO}
  */
-public interface IDataProvider {
+public interface IMovieProvider {
   String id = "I'm a interface";
 
-  Flux<DataDTO> getFlow();
+  Flux<MovieDTO> getFlow();
 }
