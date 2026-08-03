@@ -1,20 +1,18 @@
 package com.github.DarkninjaD.Subscribers;
 
-import com.github.DarkninjaD.Handlers.MovieHandler;
+import reactor.core.publisher.Flux;
 
 /**
  * DataLogger
  */
 public class MovieLogger {
 
-  public MovieLogger(MovieHandler handler) {
-    handler
-      .getProcessedFlow()
-      .subscribe(
-        item -> logData(item),
-        error -> logError(error),
-        () -> logCompletion()
-      );
+  public MovieLogger(Flux<String> handler) {
+    handler.subscribe(
+      item -> logData(item),
+      error -> logError(error),
+      () -> logCompletion()
+    );
   }
 
   private void logData(String item) {
