@@ -12,7 +12,7 @@ import reactor.core.publisher.Flux;
 
 public class App {
 
-  private static final boolean toggle = false;
+  private static final boolean toggle = true;
 
   public static void main(String[] args) throws InterruptedException {
     CsvToMovieAdapter csvAdapter = new CsvToMovieAdapter(
@@ -30,7 +30,7 @@ public class App {
 
     if (toggle) {
       MovieHandler handler = new MovieHandler(
-        List.of(csvAdapter, jsonAdapter, httpAdapter)
+        List.of(csvAdapter, jsonAdapter, httpAdapter, wsAdapter)
       );
       Flux<String> fluxCapacitor = handler.getProcessedFlow();
       MovieLogger log = new MovieLogger(fluxCapacitor);
