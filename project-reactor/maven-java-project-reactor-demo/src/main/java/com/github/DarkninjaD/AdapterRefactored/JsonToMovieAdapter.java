@@ -1,4 +1,4 @@
-package com.github.DarkninjaD.Adapters;
+package com.github.DarkninjaD.AdapterRefactored;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.DarkninjaD.Interfaces.IMovieProvider;
 import com.github.DarkninjaD.Models.MovieDTO;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Year;
@@ -35,38 +36,7 @@ public class JsonToMovieAdapter implements IMovieProvider {
 
   @Override
   public Flux<MovieDTO> getFlow() {
-    return Flux.using(
-      //Wrap in a lambda so it doesn't execute immediately
-      () -> openSource(),
-      // A Method
-      publish(),
-      // Method Reference
-      this::onClose
-    );
-  }
-
-  private Function<
-    ? super JsonParser,
-    ? extends Publisher<? extends MovieDTO>
-  > publish() {
-    return parser -> {
-      try {
-        MappingIterator<InnerJsonMovieRecord> iterator = mapper
-          .readerFor(InnerJsonMovieRecord.class)
-          .readValues(parser);
-
-        return Flux.fromIterable(() -> iterator).map(parsed -> {
-          return new MovieDTO(
-            parsed.originalTitle(),
-            parsed.runtimeMinutes(),
-            Year.of(parsed.startYear()),
-            "JSON"
-          );
-        });
-      } catch (IOException e) {
-        return Flux.error(new RuntimeException("Failed to stream JSON", e));
-      }
-    };
+    return Flux.using(this::openSource, this::publish, this::onClose);
   }
 
   private JsonParser openSource() throws IOException {
@@ -79,9 +49,39 @@ public class JsonToMovieAdapter implements IMovieProvider {
     return parser;
   }
 
-  private void onClose(JsonParser parser) {
+  // 2. The Stream Generator (Function<JsonParser, Publisher<MovieDTO>>)
+  // Takes the resource directly. Cannot throw checked exceptions.
+  private Flux<MovieDTO> publish(JsonParser parser) {
     try {
-      parser.close();
-    } catch (IOException e) {}
+      MappingIterator<InnerJsonMovieRecord> iterator = mapper
+        .readerFor(InnerJsonMovieRecord.class)
+        .readValues(parser);
+
+      return Flux.fromIterable(() -> iterator).map(parsed ->
+        new MovieDTO(
+          parsed.originalTitle(),
+          parsed.runtimeMinutes(),
+          Year.of(parsed.startYear()),
+          "JSON"
+        )
+      );
+    } catch (IOException e) {
+      // If Jackson fails here, push the error into the Reactor pipeline safely
+      return Flux.error(new RuntimeException("Failed to stream JSON", e));
+    }
+  }
+
+  // 3. The Cleanup (Consumer<JsonParser>)
+  // Cannot throw checked exceptions. Fails silently or logs if closing fails.
+  private void onClose(JsonParser parser) {
+    if (parser != null) {
+      try {
+        parser.close();
+      } catch (IOException e) {
+        System.err.println(
+          "[WARN] Failed to gracefully close JsonParser: " + e.getMessage()
+        );
+      }
+    }
   }
 }
