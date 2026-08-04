@@ -8,9 +8,10 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
 import java.time.Year;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
+import reactor.core.publisher.FluxSink;
 import reactor.util.retry.Retry;
 
 public class WebSocketToMovieAdapter implements IMovieProvider {
@@ -35,22 +36,32 @@ public class WebSocketToMovieAdapter implements IMovieProvider {
 
   @Override
   public Flux<MovieDTO> getFlow() {
-    // 1. Create a unicast Sink to act as the bridge between the WebSocket callbacks and our Flux
-    Sinks.Many<MovieDTO> sink = Sinks.many().unicast().onBackpressureBuffer();
+    // 1. Flux.create safely bridges callbacks and handles multiple subscribers/retries
+    return Flux.<MovieDTO>create(sink -> {
+      // Initialize the listener with the FluxSink
+      MovieWebSocketListener listener = new MovieWebSocketListener(
+        sink,
+        mapper
+      );
 
-    // 2. Defer connection until something actually subscribes to the pipeline
-    return Flux.defer(() -> {
-      httpClient
+      // Connect to the WebSocket
+      CompletableFuture<WebSocket> wsFuture = httpClient
         .newWebSocketBuilder()
-        .buildAsync(
-          URI.create(wsUrl),
-          new MovieWebSocketListener(sink, mapper)
-        );
+        .buildAsync(URI.create(wsUrl), listener);
 
-      // Emit the stream of DTOs from the sink
-      return sink.asFlux();
+      // 2. Cleanup: If the downstream Flux cancels (e.g. .take(5)), safely close the WebSocket
+      sink.onDispose(() -> {
+        wsFuture.thenAccept(ws -> {
+          if (ws != null) {
+            ws.sendClose(
+              WebSocket.NORMAL_CLOSURE,
+              "Client cancelling subscription"
+            );
+          }
+        });
+      });
     })
-      // 3. Add resilience: if the WebSocket drops, wait 2 seconds and try to reconnect
+      // 3. Resilience: If the WS drops, this will cleanly re-invoke Flux.create() and reconnect!
       .retryWhen(Retry.backoff(3, Duration.ofSeconds(2)))
       .onErrorResume(e -> {
         System.err.println(
@@ -63,12 +74,12 @@ public class WebSocketToMovieAdapter implements IMovieProvider {
   // ===== The Callback Listener =====
   private static class MovieWebSocketListener implements WebSocket.Listener {
 
-    private final Sinks.Many<MovieDTO> sink;
+    private final FluxSink<MovieDTO> sink;
     private final ObjectMapper mapper;
     private StringBuilder messageBuffer;
 
     public MovieWebSocketListener(
-      Sinks.Many<MovieDTO> sink,
+      FluxSink<MovieDTO> sink,
       ObjectMapper mapper
     ) {
       this.sink = sink;
@@ -109,8 +120,9 @@ public class WebSocketToMovieAdapter implements IMovieProvider {
               Year.of(parser.startYear()),
               "WEBSOCKET_API"
             );
+
             // Safely push the newly parsed objects into the Reactor pipeline
-            sink.tryEmitNext(dto);
+            sink.next(dto);
           }
         } catch (Exception e) {
           System.err.println(
@@ -126,9 +138,6 @@ public class WebSocketToMovieAdapter implements IMovieProvider {
           // Reset the buffer for the next incoming array block
           messageBuffer = new StringBuilder();
         }
-
-        webSocket.request(1);
-        return null;
       }
 
       // Tell the server we are ready for the next chunk/message
@@ -143,14 +152,15 @@ public class WebSocketToMovieAdapter implements IMovieProvider {
       String reason
     ) {
       // Gracefully close the Reactor stream when the WebSocket shuts down
-      sink.tryEmitComplete();
+      sink.complete();
       return null;
     }
 
     @Override
     public void onError(WebSocket webSocket, Throwable error) {
       // Push network errors down the reactive pipeline to trigger our retryWhen() logic
-      sink.tryEmitError(error);
+      System.err.println("[WS] Network ERROR detected: " + error.getMessage());
+      sink.error(error);
     }
   }
 }

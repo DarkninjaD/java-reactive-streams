@@ -32,9 +32,10 @@ public class App {
       MovieHandler handler = new MovieHandler(
         List.of(csvAdapter, jsonAdapter, httpAdapter)
       );
-
       Flux<String> fluxCapacitor = handler.getProcessedFlow();
       MovieLogger log = new MovieLogger(fluxCapacitor);
+
+      fluxCapacitor.blockLast();
     } else {
       MovieHandlerSink sinkHandler = new MovieHandlerSink();
 
@@ -46,8 +47,8 @@ public class App {
       sinkHandler.registerProvider(csvAdapter);
       sinkHandler.registerProvider(httpAdapter);
       sinkHandler.registerProvider(wsAdapter);
-    }
 
-    Thread.sleep(1000);
+      fluxCapacitor.blockLast();
+    }
   }
 }
