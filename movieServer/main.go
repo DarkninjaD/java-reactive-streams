@@ -17,6 +17,8 @@ type MovieDTO struct {
 	Genres   []string `json:"genres"`
 }
 
+var moviePointer = -1;
+
 // to lazy to pull from file
 var movies = []MovieDTO{
 	{"The Matrix", 136, 1999, []string{"Action", "Sci-Fi"}},
@@ -32,7 +34,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// GET handler
+// get a array of movies
 func getMoviesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -41,6 +43,26 @@ func getMoviesHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(movies); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// get a single move wrapping the array.
+func getMovieHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if moviePointer < len(movies) {
+		moviePointer ++
+	}
+	if moviePointer == len(movies) {
+		moviePointer = 0
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(movies[moviePointer]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -75,6 +97,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/movies", getMoviesHandler)
+	http.HandleFunc("/movie", getMovieHandler)
 	http.HandleFunc("/ws", wsHandler)
 
 	log.Println("Server starting on port 8080...")
