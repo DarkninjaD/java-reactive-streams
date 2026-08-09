@@ -1,6 +1,7 @@
 package com.github.DarkninjaD;
 
 import com.github.DarkninjaD.Adapters.CsvToMovieAdapter;
+import com.github.DarkninjaD.Adapters.HttpRepeatToMovieAdapter;
 import com.github.DarkninjaD.Adapters.HttpToMovieAdapter;
 import com.github.DarkninjaD.Adapters.JsonToMovieAdapter;
 import com.github.DarkninjaD.Adapters.WebSocketToMovieAdapter;
@@ -15,22 +16,19 @@ public class App {
   private static final boolean toggle = true;
 
   public static void main(String[] args) throws InterruptedException {
-    CsvToMovieAdapter csvAdapter = new CsvToMovieAdapter(
-      "/sample_movies_1993.csv"
-    );
-    JsonToMovieAdapter jsonAdapter = new JsonToMovieAdapter(
-      "/sample_movies_1993.json"
-    );
-    HttpToMovieAdapter httpAdapter = new HttpToMovieAdapter(
-      "http://localhost:8080/movies"
-    );
-    WebSocketToMovieAdapter wsAdapter = new WebSocketToMovieAdapter(
-      "ws://localhost:8080/ws"
+    var csvAdapter = new CsvToMovieAdapter("/sample_movies_1993.csv");
+    var jsonAdapter = new JsonToMovieAdapter("/sample_movies_1993.json");
+    var httpAdapter = new HttpToMovieAdapter("http://localhost:8080/movies");
+    var wsAdapter = new WebSocketToMovieAdapter("ws://localhost:8080/ws");
+    var httpRAdapter = new HttpRepeatToMovieAdapter(
+      "http://localhost:8080/movie",
+      2
     );
 
     if (toggle) {
       MovieHandler handler = new MovieHandler(
-        List.of(csvAdapter, jsonAdapter, httpAdapter, wsAdapter)
+        //List.of(csvAdapter, jsonAdapter, httpAdapter, wsAdapter, httpRAdapter)
+        List.of(httpRAdapter)
       );
       Flux<String> fluxCapacitor = handler.getProcessedFlow();
       MovieLogger log = new MovieLogger(fluxCapacitor);
@@ -47,6 +45,7 @@ public class App {
       sinkHandler.registerProvider(csvAdapter);
       sinkHandler.registerProvider(httpAdapter);
       sinkHandler.registerProvider(wsAdapter);
+      sinkHandler.registerProvider(httpRAdapter);
 
       fluxCapacitor.blockLast();
     }
